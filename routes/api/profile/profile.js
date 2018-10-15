@@ -7,11 +7,11 @@ const User = require("../../../models/User");
 // @desc    Get user by id
 // @access  Private
 
-router.get("/:User_id", (req, res) => {
+router.get("/:id", (req, res) => {
   const { errors, isValid } = validateProfileInput(req.body);
   const profileUpdates = {};
 
-  User.findById({ user: req.params.User_id })
+  User.findById(req.params.id)
     .then(profile => {
       if (!profile) {
         errors.profile = "Profile not found";
@@ -21,6 +21,7 @@ router.get("/:User_id", (req, res) => {
     })
     .catch(err => {
       return res.status(404).json({
+        err: err,
         profile: "No profile found for this user"
       });
     });
