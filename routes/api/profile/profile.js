@@ -89,20 +89,37 @@ router.post(
           { new: true }
         ).then(profile => res.json(profile));
       } else {
-        Profile.find({handle: profileFields.handle}) 
-          .then(user => {
-            errors.handle =  'That handle already exists';
-            return res.json(errors)
-          });
+        Profile.find({ handle: profileFields.handle }).then(user => {
+          errors.handle = "That handle already exists";
+          return res.json(errors);
+        });
         new Profile(profileFields).save().then(profile => res.json(profile));
       }
     });
   }
 );
 
+/**
+ * @route GET /api/profile/:handle
+ * @description get profile by user handle
+ * @access public
+ */
 
-router.get('/:handle', (req, res) => {
-  return res.json(req.body);
+router.get("/:handle", (req, res) => {
+  const { handle } = req.params;
+  const errors = {};
+
+  Profile.find(hanle)
+    .then(profile => {
+      if (!profile) {
+        errors.noProfile = "No profile found by that handle";
+        return res.status(404).json(errors);
+      }
+      return res.json(profile);
+    })
+    .catch(err => {
+      return res.status(500).json(err);
+    });
 });
 
 module.exports = router;
