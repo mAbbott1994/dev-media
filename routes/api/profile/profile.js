@@ -100,24 +100,9 @@ router.post(
   }
 );
 
-router.get("/:user_id", (req, res) => {
-  const errrors = {};
 
-  console.log(req.params.user_id);
-  Profile.findById(req.params.user_id)
-    .then(profile => {
-      if (!profile) {
-        errors.profile = "Profile not found";
-        return res.status(404).json(errors);
-      }
-      return res.json(profile);
-    })
-    .catch(err => {
-      return res.status(404).json({
-        err: err,
-        profile: "No profile found for this user"
-      });
-    });
+router.get('/:handle', (req, res) => {
+  return res.json(req.body);
 });
 
 module.exports = router;
