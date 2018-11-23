@@ -18,11 +18,11 @@ app.use("/api/authentication", userRoute);
 app.use("/api/posts", postsRoute);
 app.use("/api/profile", profileRoute);
 
-const port = process.env.PORT || 5002;
+mongoose.connect(
+	dbKey.mongodb.uri,
+	{ useNewUrlParser: true }
+);
+const port = process.env.PORT || 5000;
 app.listen(port, () => {
 	console.log(`server is running on port ${port}`);
-	mongoose.connect(
-		dbKey.mongodb.uri,
-		{ useNewUrlParser: true }
-	);
 });
