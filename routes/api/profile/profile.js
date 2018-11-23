@@ -5,121 +5,104 @@ const Profile = require("../../../models/Profile");
 const User = require("../../../models/User");
 
 /**
- * @route GET api/profile/
- * @description Get current users profile if there logged in
+ * @route GET /api/profile/test
+ * @description Test route
+ * @access public
+ */
+
+router.get("/test", (req, res) => {
+	res.json("route works");
+});
+
+/**
+ * @route GET /api/profile/
+ * @description GET current user profile
  * @access Private
  */
 
 router.get(
-  "/",
-  passport.authenticate("jwt", { session: false }),
-  (req, res) => {
-    const errors = {};
-    Profile.findOne({ user: req.user.id }).then(profile => {
-      if (!profile) {
-        errors.noprofile = "No profile found";
-        return res.status(404).json(errors);
-      }
-      res.json(profile);
-    });
-  }
+	"/",
+	passport.authenticate("jwt", { session: false }),
+	(req, res) => {
+		const errors = {};
+		Profile.findOne({ user: req.user.id })
+			.then(profile => {
+				if (!profile) {
+					errors.profile = "There is no profile for this user";
+					res.status(404).json(errors);
+				}
+				res.json(profile);
+			})
+			.catch(err => res.status(404).json(err));
+	}
 );
 
 /**
- * @route POST api/profile
- * @description Update or edit user profile
+ * @route POST api/profile/
+ * @description create user profile
  * @access Private
  */
+
 router.post(
-  "/",
-  passport.authenticate("jwt", { session: false }),
-  (req, res) => {
-    const profileFields = {};
+	"/",
+	passport.authenticate("jwt", { session: false }),
+	(req, res) => {
+		const { errors, isValid } = validateProfileInput(req.body);
 
-    //get user details that aren't apart of the form
-    profileFields.user = req.user.id;
+		// Check Validation
+		if (!isValid) {
+			// Return any errors with 400 status
+			return res.status(400).json(errors);
+		}
 
-    if (req.body.handle) profileFields.handle = req.body.handle;
-    if (req.body.company) profileFields.comapny = req.body.company;
-    if (req.body.website) profileFields.website = req.body.website;
-    if (req.body.location) profileFields.location = req.body.location;
-    if (req.body.bio) profileFields.bio = req.body.bio;
-    if (req.body.githubusername)
-      profileFields.githubusername = req.body.githubusername;
-    if (typeof req.body.skills !== "undefined") {
-      profileFields.skills = profileFields.skills.split(",");
-    }
+		// Get fields
+		const profileFields = {};
+		profileFields.user = req.user.id;
+		if (req.body.handle) profileFields.handle = req.body.handle;
+		if (req.body.company) profileFields.company = req.body.company;
+		if (req.body.website) profileFields.website = req.body.website;
+		if (req.body.location) profileFields.location = req.body.location;
+		if (req.body.bio) profileFields.bio = req.body.bio;
+		if (req.body.status) profileFields.status = req.body.status;
+		if (req.body.githubusername)
+			profileFields.githubusername = req.body.githubusername;
+		// Skills - Spilt into array
+		if (typeof req.body.skills !== "undefined") {
+			profileFields.skills = req.body.skills.split(",");
+		}
 
-    profileFields.experience = {};
+		// Social
+		profileFields.social = {};
+		if (req.body.youtube) profileFields.social.youtube = req.body.youtube;
+		if (req.body.twitter) profileFields.social.twitter = req.body.twitter;
+		if (req.body.facebook) profileFields.social.facebook = req.body.facebook;
+		if (req.body.linkedin) profileFields.social.linkedin = req.body.linkedin;
+		if (req.body.instagram) profileFields.social.instagram = req.body.instagram;
 
-    if (req.body.title) profileFields.experience = req.body.title;
-    if (req.body.company) profileFields.experience = req.body.company;
-    if (req.body.location) profileFields.experience = req.body.location;
-    if (req.body.from) profileFields.experience = req.body.from;
-    if (req.body.to) profileFields.experience = req.body.to;
-    if (req.body.current) profileFields.experience = req.body.current;
-    if (req.body.description) profileFields.description = req.body.current;
+		Profile.findOne({ user: req.user.id }).then(profile => {
+			if (profile) {
+				// Update
+				Profile.findOneAndUpdate(
+					{ user: req.user.id },
+					{ $set: profileFields },
+					{ new: true }
+				).then(profile => res.json(profile));
+			} else {
+				// Create
 
-    //education
-    profileFields.education = {};
+				// Check if handle exists
+				Profile.findOne({ handle: profileFields.handle }).then(profile => {
+					if (profile) {
+						errors.handle = "That handle already exists";
+						res.status(400).json(errors);
+					}
 
-    if (req.body.school) profileFields.education.school = req.body.school;
-    if (req.body.degree) profileFields.education.degree = req.body.degree;
-    if (req.body.fieldofstufy)
-      profileFields.education.fieldofstufy = req.body.fieldofstufy;
-    if (req.body.from) profileFields.from = req.body.from;
-    if (req.body.to) profileFields.education.to = req.body.to;
-    if (req.body.current) profileFields.education.current = req.body.current;
-    if (req.body.description)
-      profileFields.education.description = req.body.description;
-
-    //Social
-    profileFields.social = {};
-
-    if (req.body.youtube) profileFields.social.youtube = req.body.youtube;
-    if (req.body.facebook) profileFields.social.facebook = req.body.facebook;
-    if (req.body.instagram) profileFields.social.instagram = req.body.instagram;
-    if (req.body.linkedin) profileFields.social.linkedin = req.body.linked;
-
-    Profile.findOne({ user: req.user_id }).then(profile => {
-      if (profile) {
-        Profile.findOneAndUpdate(
-          { user: req.user_id },
-          { $set: profileFields },
-          { new: true }
-        ).then(profile => res.json(profile));
-      } else {
-        Profile.find({ handle: profileFields.handle }).then(user => {
-          errors.handle = "That handle already exists";
-          return res.json(errors);
-        });
-        new Profile(profileFields).save().then(profile => res.json(profile));
-      }
-    });
-  }
+					// Save Profile
+					new Profile(profileFields).save().then(profile => res.json(profile));
+				});
+			}
+		});
+	}
 );
-
-/**
- * @route GET /api/profile/:handle
- * @description get profile by user handle
- * @access public
- */
-
-router.get("/:handle", (req, res) => {
-  const { handle } = req.params;
-  const errors = {};
-
-  Profile.find(hanle)
-    .then(profile => {
-      if (!profile) {
-        errors.noProfile = "No profile found by that handle";
-        return res.status(404).json(errors);
-      }
-      return res.json(profile);
-    })
-    .catch(err => {
-      return res.status(500).json(err);
-    });
-});
 
 module.exports = router;
