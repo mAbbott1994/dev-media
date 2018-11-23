@@ -309,12 +309,16 @@ router.delete(
  * @access Private
  */
 
-router.get(
+router.delete(
 	"/api/profile/",
 	passport.authenticate("jwt", { session: false }),
 	(req, res) => {
 		Profile.findOneAndRemove({ user: req.user.id }).then(() => {
-			U;
+			User.findByOneAndRemove({ _id: req.user.id }).then(() =>
+				res.status(200).json({
+					success: true
+				})
+			);
 		});
 	}
 );
