@@ -21,15 +21,16 @@ router.get("/test", (req, res) => {
  */
 
 router.get("/", (req, res) => {
-	const errors = {};
 	Post.find()
 		.sort({ date: -1 })
 		.then(posts => {
-			res.status(200).json(posts);
+			if (posts.length === 0) {
+				return res.status(404).json({ errors: "No posts found" });
+			}
+			return res.status(200).json(posts);
 		})
 		.catch(() => {
-			errors.noposts = "No posts found";
-			res.status(404).json(errors);
+			return res.status(404).json({ errors: "No posts found" });
 		});
 });
 
@@ -49,9 +50,8 @@ router.get("/:id", (req, res) => {
 			}
 			res.status(200).json(post);
 		})
-		.catch(err => {
-			errors.noposts = "no posts found with this ID ";
-			res.status(404).json(errors);
+		.catch(() => {
+			res.status(404).json({ nopostsfound: "No post found" });
 		});
 });
 
@@ -102,6 +102,66 @@ router.delete(
 				Post.remove()
 					.then(() => res.status(200).json({ success: true }))
 					.catch(() => res.status(404).json({ postnotfound: "no post found" }));
+			});
+		});
+	}
+);
+
+/**
+ * @route POST /api/posts/like/:id
+ * @desc Like post
+ * @access private
+ */
+
+router.post(
+	"/like/:id",
+	passport.authenticate("jwt", { session: false }),
+	(req, res) => {
+		Profile.findOne({ user: req.user.id }).then(() => {
+			Post.findById(req.params.id).then(post => {
+				if (
+					post.likes.filter(like => like.user.toString() === req.user.id)
+						.length > 0
+				) {
+					return res
+						.status(400)
+						.json({ liked: "User already liked this post" });
+				}
+
+				post.likes.unshift({ user: req.user.id });
+				post.save().then(post => res.status(200).then({ success: true, post }));
+			});
+		});
+	}
+);
+
+/**
+ * @route POST /api/posts/unlike/:id
+ * @desc Unlike post
+ * @access private
+ */
+
+router.post(
+	"/unlike/:id",
+	passport.authenticate("jwt", { session: false }),
+	(req, res) => {
+		Profile.findOne({ user: req.user.id }).then(() => {
+			Post.findById(req.params.id).then(post => {
+				if (
+					post.likes.filter(like => like.user.toString() === req.user.id)
+						.length == 0
+				) {
+					return res
+						.status(400)
+						.json({ notliked: "You have not liked this post" });
+				}
+				const removeIndex = post.likes
+					.map(item => item.user.toString())
+					.indexOf(req.user.id);
+
+				post.likes.splice(removeIndex, 1);
+
+				post.save().then(post => res.status(200).json({ success: true, post }));
 			});
 		});
 	}
