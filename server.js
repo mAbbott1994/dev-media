@@ -19,10 +19,10 @@ app.use("/api/posts", postsRoute);
 app.use("/api/profile", profileRoute);
 
 mongoose.connect(
-	dbKey.mongodb.uri,
-	{ useNewUrlParser: true }
+  dbKey.mongodb.uri,
+  { useNewUrlParser: true }
 );
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
-	console.log(`server is running on port ${port}`);
+  console.log(`server is running on port ${port}`);
 });

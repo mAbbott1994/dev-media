@@ -1,9 +1,9 @@
 import React, { Component } from "react";
-import PropTypes from "prop-types";
-import classnames from "classnames";
 import { withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 import { loginUser } from "../../actions/auth/authActions";
+import PropTypes from "prop-types";
+import classnames from "classnames";
 
 class Login extends Component {
   constructor() {
@@ -16,14 +16,10 @@ class Login extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.auth.isAuth) {
-      this.props.history.push("/dashboard");
-    }
-
-    if (nextProps.errors) {
-      this.setState({ errors: nextProps.errors });
-    }
+    if (nextProps.auth.isAuth) this.props.history.push("/dashboard");
+    if (nextProps.errors) this.setState({ errors: nextProps.errors });
   }
+
   onChange = e => {
     this.setState({ [e.target.name]: e.target.value });
   };
